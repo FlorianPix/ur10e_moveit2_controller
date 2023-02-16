@@ -68,7 +68,7 @@ def generate_launch_description():
     robot_description = get_robot_description()
     robot_description_semantic = get_robot_description_semantic()
     demo_node = Node(
-        package="ur10e_moveit2_position_controller",
+        package="ur10e_moveit2_controller",
         executable="ur10e_moveit2_controller",
         name="ur10e_moveit2_controller",
         output="screen",

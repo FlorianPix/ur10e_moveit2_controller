@@ -11,12 +11,7 @@
 #include <moveit_msgs/msg/attached_collision_object.hpp>
 #include <moveit_msgs/msg/collision_object.hpp>
 
-struct Quaternion
-{
-    double w, x, y, z;
-};
-
-Quaternion ToQuaternion(double roll, double pitch, double yaw)
+geometry_msgs::msg::Quaternion ToQuaternion(double roll, double pitch, double yaw)
 {
     double cr = cos(roll * 0.5);
     double sr = sin(roll * 0.5);
@@ -25,7 +20,7 @@ Quaternion ToQuaternion(double roll, double pitch, double yaw)
     double cy = cos(yaw * 0.5);
     double sy = sin(yaw * 0.5);
 
-    Quaternion q;
+    geometry_msgs::msg::Quaternion  q;
     q.w = cr * cp * cy + sr * sp * sy;
     q.x = sr * cp * cy - cr * sp * sy;
     q.y = cr * sp * cy + sr * cp * sy;
@@ -47,8 +42,6 @@ moveit_msgs::msg::CollisionObject create_collision_box(
         double pitch,
         double yaw
     ){
-    Quaternion q = ToQuaternion(roll, pitch, yaw);
-
     moveit_msgs::msg::CollisionObject collision_object;
     collision_object.header.frame_id = frame_id;
 
@@ -65,10 +58,7 @@ moveit_msgs::msg::CollisionObject create_collision_box(
 
     // Define a pose for the box (specified relative to frame_id).
     geometry_msgs::msg::Pose box_pose;
-    box_pose.orientation.w = q.w;
-    box_pose.orientation.x = q.x;
-    box_pose.orientation.y = q.y;
-    box_pose.orientation.z = q.z;
+    box_pose.orientation = ToQuaternion(roll, pitch, yaw);
     box_pose.position.x = position_x;
     box_pose.position.y = position_y;
     box_pose.position.z = position_z;
@@ -78,6 +68,53 @@ moveit_msgs::msg::CollisionObject create_collision_box(
     collision_object.operation = collision_object.ADD;
 
     return collision_object;
+}
+
+std::vector<geometry_msgs::msg::Pose> cylinder_section(
+    double R = 0.1 /* radius of cylinder */,
+    double step_size = 0.05 /* distance between curves */,
+    double min_angle = M_PI / 8 /* start angle of cylinder section */,
+    double max_angle = 7 * M_PI / 8 /* end angle of cylinder section */,
+    double x_offset = 0.5 /* x position of first point of cylinder */,
+    double y_offset = 0.5 /* y position of first point of cylinder */,
+    double z_offset = 0.25 /* z position of first point of cylinder */){
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    geometry_msgs::msg::Pose target_pose;
+
+    for (int p = 0; p < 4; p += 2) {
+        for (double t = min_angle; t < max_angle; t += 0.1) {
+            target_pose.position.x = R * cos(t) + x_offset;
+            target_pose.position.z = R * sin(t) + z_offset;
+            target_pose.position.y = step_size * p + y_offset;
+            target_pose.orientation = ToQuaternion(M_PI, (M_PI/4.0)-(2.0/3.0)*(t-(M_PI/8.0)), 0.0);
+            waypoints.push_back(target_pose);
+        }
+        for (double t = 0.0; t < step_size; t += 0.01) {
+            target_pose.position.x = R * cos(max_angle) + x_offset;
+            target_pose.position.z = R * sin(max_angle) + z_offset;
+            target_pose.position.y = step_size * (p + t) + y_offset;
+            target_pose.orientation = ToQuaternion(M_PI, -M_PI/4.0, 0.0);
+            waypoints.push_back(target_pose);
+        }
+
+        for (double t = max_angle; t > min_angle ; t -= 0.1){
+            target_pose.position.x = R * cos(t) + x_offset;
+            target_pose.position.z = R * sin(t) + z_offset;
+            target_pose.position.y = step_size * (p + 1) + y_offset;
+            target_pose.orientation = ToQuaternion(M_PI, (M_PI/4.0)-(2.0/3.0)*(t-(M_PI/8.0)), 0.0);
+            waypoints.push_back(target_pose);
+        }
+
+        for (double t = 1.0; t < 2.0; t += 0.01) {
+            target_pose.position.x = R * cos(min_angle) + x_offset;
+            target_pose.position.z = R * sin(min_angle) + z_offset;
+            target_pose.position.y = step_size * (p + t) + y_offset;
+            target_pose.orientation = ToQuaternion(M_PI, M_PI/4.0, 0.0);
+            waypoints.push_back(target_pose);
+        }
+    }
+
+    return waypoints;
 }
 
 int main(int argc, char * argv[])
@@ -197,61 +234,8 @@ int main(int argc, char * argv[])
         return 0;
     };
 
-    double const R = 0.15;  // winding radius
-    double const step_size = 0.05;
-    int const array_size = 341; // (4.0 / 2.0) * (2.0 * ((M_PI / 0.1)) + 4.0) + ?;
-    double xs[array_size], ys[array_size], zs[array_size];
-    Quaternion qs[array_size];
-    int i = 0;
-
-    double min_angle = M_PI / 8;
-    double max_angle = 7 * M_PI / 8;
-    double y_offset = 0.5;
-    double x_offset = 0.5;
-    double z_offset = 0.0;
-
-    for (int p = 0; p < 4; p += 2) {
-        for (double t = min_angle; t < max_angle; t += 0.1) {
-            xs[i] = R * cos(t) + x_offset;
-            zs[i] = R * sin(t) + z_offset;
-            ys[i] = step_size * p + y_offset;
-            qs[i] = ToQuaternion(M_PI, (M_PI/4.0)-(2.0/3.0)*(t-(M_PI/8.0)), 0.0);
-            i++;
-        }
-        for (double t = 0.0; t < step_size; t += 0.01) {
-            xs[i] = R * cos(max_angle) + x_offset;
-            zs[i] = R * sin(max_angle) + z_offset;
-            ys[i] = step_size * (p + t) + y_offset;
-            qs[i] = ToQuaternion(M_PI, -M_PI/4.0, 0.0);
-            i++;
-        }
-    
-        for (double t = max_angle; t > min_angle ; t -= 0.1){
-            xs[i] = R * cos(t) + x_offset;
-            zs[i] = R * sin(t) + z_offset;
-            ys[i] = step_size * (p + 1) + y_offset;
-            qs[i] = ToQuaternion(M_PI, (M_PI/4.0)-(2.0/3.0)*(t-(M_PI/8.0)), 0.0);
-            i++;
-        }
-
-        for (double t = 1.0; t < 2.0; t += 0.01) {
-            xs[i] = R * cos(min_angle) + x_offset;
-            zs[i] = R * sin(min_angle) + z_offset;
-            ys[i] = step_size * (p + t) + y_offset;
-            qs[i] = ToQuaternion(M_PI, M_PI/4.0, 0.0);
-            i++;
-        }
-    }
-
-    std::vector<geometry_msgs::msg::Pose> waypoints;
-    geometry_msgs::msg::Pose target_pose;
-    target_pose.position.x = xs[0];
-    target_pose.position.y = ys[0];
-    target_pose.position.z = zs[0];
-    target_pose.orientation.x = qs[0].x;
-    target_pose.orientation.y = qs[0].y;
-    target_pose.orientation.z = qs[0].z;
-    target_pose.orientation.w = qs[0].w;
+    std::vector<geometry_msgs::msg::Pose> waypoints = cylinder_section();
+    geometry_msgs::msg::Pose target_pose = waypoints.at(0);
 
     move_group_interface.setPoseTarget(target_pose);
     // Create a plan to that target pose
@@ -268,19 +252,6 @@ int main(int argc, char * argv[])
         RCLCPP_ERROR(logger, "Planning failed!");
         rclcpp::shutdown();
         return 0;
-    }
-
-    for (int j = 0; j < i; j++){
-        // Set a target Pose
-        target_pose.position.x = xs[j];
-        target_pose.position.y = ys[j];
-        target_pose.position.z = zs[j];
-        target_pose.orientation.x = qs[j].x;
-        target_pose.orientation.y = qs[j].y;
-        target_pose.orientation.z = qs[j].z;
-        target_pose.orientation.w = qs[j].w;
-
-        waypoints.push_back(target_pose);
     }
 
     moveit_msgs::msg::RobotTrajectory trajectory;
