@@ -71,7 +71,7 @@ moveit_msgs::msg::CollisionObject create_collision_box(
 }
 
 std::vector<geometry_msgs::msg::Pose> cylinder_section(
-    double R = 0.1 /* radius of cylinder */,
+    double R = 0.3 /* radius of cylinder */,
     double step_size = 0.05 /* distance between curves */,
     double min_angle = M_PI / 8 /* start angle of cylinder section */,
     double max_angle = 7 * M_PI / 8 /* end angle of cylinder section */,
@@ -150,6 +150,7 @@ int main(int argc, char * argv[])
     ));
 
     // virtual walls
+    /*
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "wall1",
@@ -210,7 +211,7 @@ int main(int argc, char * argv[])
         0.5, 0.5, -0.035,
         0.0, 0.0, 0.0
     ));
-
+    */
     // camera
     moveit_msgs::msg::CollisionObject camera = create_collision_box(
         move_group_interface.getEndEffectorLink(),
