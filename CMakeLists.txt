@@ -34,7 +34,18 @@ ament_target_dependencies(
   "rclcpp"
 )
 
-install(TARGETS ur10e_moveit2_position_controller ur10e_moveit2_controller
+add_executable(ur10e_moveit2_rectangle_controller src/ur10e_moveit2_rectangle_controller.cpp)
+target_include_directories(ur10e_moveit2_rectangle_controller PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(ur10e_moveit2_rectangle_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  ur10e_moveit2_rectangle_controller
+  "moveit_ros_planning_interface"
+  "rclcpp"
+)
+
+install(TARGETS ur10e_moveit2_position_controller ur10e_moveit2_rectangle_controller ur10e_moveit2_controller
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files.
