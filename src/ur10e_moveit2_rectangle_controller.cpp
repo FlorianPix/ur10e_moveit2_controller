@@ -71,6 +71,31 @@ moveit_msgs::msg::CollisionObject create_collision_box(
 }
 
 std::vector<geometry_msgs::msg::Pose> create_rectangle(
+    double y_min = -0.75 /* x position of first point of rectangle */,
+    double x_offset = 0.75 /* y position of first point of rectangle */,
+    double z_min = -0.25 /* z position of first point of rectangle */,
+    double y_max = 0.75 /* x position of last point of rectangle */,
+    double z_max = 1.0 /* z position of last point of rectangle */,
+    double steps = 5.0 /* divisions of the rectangle */){
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    geometry_msgs::msg::Pose target_pose;
+
+    double height_diff = fabs(z_max - z_min);
+    double step_size = height_diff / steps;
+
+    for (double z = 0.0; z < height_diff; z += step_size) {
+        for (double y = y_min; y < y_max; y += 0.1){
+            target_pose.position.x = x_offset;
+            target_pose.position.z = z_min + z;
+            target_pose.position.y = y;
+            target_pose.orientation = ToQuaternion(M_PI/2, 0.0, M_PI/2);
+            waypoints.push_back(target_pose);
+        }
+    }
+    return waypoints;
+}
+
+std::vector<geometry_msgs::msg::Pose> create_rectangle_y(
     double x_min = -0.75 /* x position of first point of rectangle */,
     double y_offset = 0.75 /* y position of first point of rectangle */,
     double z_min = -0.25 /* z position of first point of rectangle */,
@@ -124,7 +149,7 @@ int main(int argc, char * argv[])
         "floor",
         3.0, 3.0, 0.1,
         0.0, 0.0, -0.78,
-        0.0, 0.0, 0.0
+        0.0, 0.0, -M_PI/4
     ));
 
     // virtual walls
@@ -157,23 +182,23 @@ int main(int argc, char * argv[])
         0.0, -1.5, -0.78,
         0.0, 0.0, 0.0
     ));
-
+    */
     // boxes on which the ur10 stands
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "box1",
-        0.3, 0.45, 0.53,
-        -0.155, 0.0, -0.27,
-        0.0, 0.0, 0.0
+        0.2, 0.2, 0.53,
+        0.0, 0.0, -0.27,
+        0.0, 0.0, -M_PI/4
     ));
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "box2",
-        0.8, 0.8, 0.25,
-        0.0, 0.0, -0.655,
-        0.0, 0.0, 0.0
+        1.0, 2.15, 0.25,
+        0.6, 0.6, -0.655,
+        0.0, 0.0, -M_PI/4
     ));
-
+    /*
     // specimen
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
