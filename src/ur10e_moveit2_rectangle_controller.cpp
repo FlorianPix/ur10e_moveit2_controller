@@ -11,22 +11,26 @@
 #include <moveit_msgs/msg/attached_collision_object.hpp>
 #include <moveit_msgs/msg/collision_object.hpp>
 
-geometry_msgs::msg::Quaternion ToQuaternion(double roll, double pitch, double yaw)
-{
-    double cr = cos(roll * 0.5);
-    double sr = sin(roll * 0.5);
-    double cp = cos(pitch * 0.5);
-    double sp = sin(pitch * 0.5);
-    double cy = cos(yaw * 0.5);
-    double sy = sin(yaw * 0.5);
-
-    geometry_msgs::msg::Quaternion  q;
-    q.w = cr * cp * cy + sr * sp * sy;
-    q.x = sr * cp * cy - cr * sp * sy;
-    q.y = cr * sp * cy + sr * cp * sy;
-    q.z = cr * cp * sy - sr * sp * cy;
-
-    return q;
+std::vector<geometry_msgs::msg::Pose> rotate(std::vector<geometry_msgs::msg::Pose> ps, float theta){
+    std::vector<geometry_msgs::msg::Pose> ps_r;
+    geometry_msgs::msg::Pose p_r;
+    tf2::Quaternion q_rot, q_new;
+    q_rot.setRPY(0.0, 0.0, theta);
+    for (unsigned int i = 0; i < size(ps); i++) {
+        geometry_msgs::msg::Pose p = ps.at(i);
+        p_r = p;
+        p_r.position.x = p.position.x * std::cos(theta) - p.position.y * std::sin(theta);
+        p_r.position.y = p.position.x * std::sin(theta) + p.position.y * std::cos(theta);
+        tf2::Quaternion q_orig = tf2::Quaternion(p_r.orientation.x, p_r.orientation.y, p_r.orientation.z, p_r.orientation.w);
+        q_new = q_rot * q_orig;
+        q_new.normalize();
+        p_r.orientation.w = q_new.w();
+        p_r.orientation.x = q_new.x();
+        p_r.orientation.y = q_new.y();
+        p_r.orientation.z = q_new.z();
+        ps_r.push_back(p_r);
+    }
+    return ps_r;
 }
 
 moveit_msgs::msg::CollisionObject create_collision_box(
@@ -58,7 +62,12 @@ moveit_msgs::msg::CollisionObject create_collision_box(
 
     // Define a pose for the box (specified relative to frame_id).
     geometry_msgs::msg::Pose box_pose;
-    box_pose.orientation = ToQuaternion(roll, pitch, yaw);
+    tf2::Quaternion q;
+    q.setRPY(roll, pitch, yaw);
+    box_pose.orientation.w = q.w();
+    box_pose.orientation.x = q.x();
+    box_pose.orientation.y = q.y();
+    box_pose.orientation.z = q.z();
     box_pose.position.x = position_x;
     box_pose.position.y = position_y;
     box_pose.position.z = position_z;
@@ -72,8 +81,8 @@ moveit_msgs::msg::CollisionObject create_collision_box(
 
 std::vector<geometry_msgs::msg::Pose> create_rectangle(
     double y_min = -0.75 /* x position of first point of rectangle */,
-    double x_offset = 0.75 /* y position of first point of rectangle */,
-    double z_min = -0.25 /* z position of first point of rectangle */,
+    double x_offset = 0.65 /* y position of first point of rectangle */,
+    double z_min = 0.0 /* z position of first point of rectangle */,
     double y_max = 0.75 /* x position of last point of rectangle */,
     double z_max = 1.0 /* z position of last point of rectangle */,
     double steps = 5.0 /* divisions of the rectangle */){
@@ -88,36 +97,16 @@ std::vector<geometry_msgs::msg::Pose> create_rectangle(
             target_pose.position.x = x_offset;
             target_pose.position.z = z_min + z;
             target_pose.position.y = y;
-            target_pose.orientation = ToQuaternion(M_PI/2, 0.0, M_PI/2);
+            tf2::Quaternion q;
+            q.setRPY(M_PI/2, M_PI/4, M_PI/2);
+            target_pose.orientation.w = q.w();
+            target_pose.orientation.x = q.x();
+            target_pose.orientation.y = q.y();
+            target_pose.orientation.z = q.z();
             waypoints.push_back(target_pose);
         }
     }
-    return waypoints;
-}
-
-std::vector<geometry_msgs::msg::Pose> create_rectangle_y(
-    double x_min = -0.75 /* x position of first point of rectangle */,
-    double y_offset = 0.75 /* y position of first point of rectangle */,
-    double z_min = -0.25 /* z position of first point of rectangle */,
-    double x_max = 0.75 /* x position of last point of rectangle */,
-    double z_max = 1.0 /* z position of last point of rectangle */,
-    double steps = 10.0 /* divisions of the rectangle */){
-    std::vector<geometry_msgs::msg::Pose> waypoints;
-    geometry_msgs::msg::Pose target_pose;
-
-    double height_diff = fabs(z_max - z_min);
-    double step_size = height_diff / steps;
-
-    for (double z = 0.0; z < height_diff; z += step_size) {
-        for (double x = x_min; x < x_max; x += 0.1){
-            target_pose.position.x = x;
-            target_pose.position.z = z_min + z;
-            target_pose.position.y = y_offset;
-            target_pose.orientation = ToQuaternion(-M_PI/2, 0.0, 0.0);
-            waypoints.push_back(target_pose);
-        }
-    }
-    return waypoints;
+    return rotate(waypoints, M_PI/4);
 }
 
 int main(int argc, char * argv[])
@@ -153,14 +142,14 @@ int main(int argc, char * argv[])
     ));
 
     // virtual walls
-    /*
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "wall1",
         0.1, 3.0, 3.0,
-        1.5, 0.0, -0.78, 
-        0.0, 0.0, 0.0
+        -0.21, -0.21, -0.78,
+        0.0, 0.0, M_PI/4
     ));
+    /*
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "wall2",
@@ -186,27 +175,44 @@ int main(int argc, char * argv[])
     // boxes on which the ur10 stands
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
-        "box1",
+        "stand",
         0.2, 0.2, 0.53,
         0.0, 0.0, -0.27,
         0.0, 0.0, -M_PI/4
     ));
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
-        "box2",
+        "linear_axis",
         1.0, 2.15, 0.25,
-        0.6, 0.6, -0.655,
+        -0.2, -0.2, -0.655,
+        0.0, 0.0, -M_PI/4
+    ));
+    // control box conveyor
+    collision_objects.push_back(create_collision_box(
+        move_group_interface.getPlanningFrame(),
+        "conveyor_control",
+        0.35, 0.48, 0.68,
+        0.85, -0.85, -0.44,
+        0.0, 0.0, -M_PI/4
+    ));
+    // control box UR10
+    collision_objects.push_back(create_collision_box(
+        move_group_interface.getPlanningFrame(),
+        "UR10_control",
+        0.8, 0.8, 0.8,
+        0.0, -1.3, -0.4,
+        0.0, 0.0, -M_PI/4
+    ));
+    // conveyor
+    collision_objects.push_back(create_collision_box(
+        move_group_interface.getPlanningFrame(),
+        "conveyor",
+        2.6, 1.54, 0.55,
+        1.1, 1.1, -0.45,
         0.0, 0.0, -M_PI/4
     ));
     /*
     // specimen
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "stand",
-        0.35, 0.35, 0.62,
-        0.5, 0.5, -0.47,
-        0.0, 0.0, 0.0
-    ));
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "specimen",
