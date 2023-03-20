@@ -45,7 +45,18 @@ ament_target_dependencies(
   "rclcpp"
 )
 
-install(TARGETS ur10e_moveit2_position_controller ur10e_moveit2_rectangle_controller ur10e_moveit2_controller
+add_executable(sim_camera_adapter src/sim_camera_adapter.cpp)
+target_include_directories(sim_camera_adapter PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(sim_camera_adapter PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  sim_camera_adapter
+  "moveit_ros_planning_interface"
+  "rclcpp"
+)
+
+install(TARGETS ur10e_moveit2_position_controller ur10e_moveit2_rectangle_controller ur10e_moveit2_controller sim_camera_adapter
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files.
