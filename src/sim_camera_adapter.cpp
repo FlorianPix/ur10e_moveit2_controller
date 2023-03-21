@@ -35,12 +35,12 @@ private:
     // Store frame names in variables that will be used to
     // compute transformations
     std::string fromFrameRel = "world";
-    std::string toFrameRel = "shoulder_link";
+    std::string toFrameRel = "depth_camera/link/depth_camera1";
 
     geometry_msgs::msg::TransformStamped t;
     try {
       t = tf_buffer_->lookupTransform(
-        toFrameRel, fromFrameRel,
+        fromFrameRel, toFrameRel,
         tf2::TimePointZero);
     } catch (const tf2::TransformException & ex) {
       RCLCPP_INFO(
@@ -54,10 +54,10 @@ private:
     pose_msg.position.y = t.transform.translation.y;
     pose_msg.position.z = t.transform.translation.z;
     RCLCPP_INFO(this->get_logger(), "X: %f, Y: %f, Z: %f", pose_msg.position.x, pose_msg.position.y, pose_msg.position.z);
-    pose_msg.orientation.x = t.transform.rotation.x;
-    pose_msg.orientation.y = t.transform.rotation.y;
-    pose_msg.orientation.z = t.transform.rotation.z;
-    pose_msg.orientation.w = t.transform.rotation.w;
+    pose_msg.orientation.x = t.transform.rotation.w;
+    pose_msg.orientation.y = t.transform.rotation.x;
+    pose_msg.orientation.z = t.transform.rotation.y;
+    pose_msg.orientation.w = t.transform.rotation.z;
     publisher_camera_pose_->publish(pose_msg);
   }
 
