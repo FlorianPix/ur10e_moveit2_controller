@@ -23,13 +23,13 @@ ament_target_dependencies(
   "rclcpp"
 )
 
-add_executable(ur10e_moveit2_controller src/ur10e_moveit2_controller.cpp)
-target_include_directories(ur10e_moveit2_controller PUBLIC
+add_executable(ur10e_moveit2_cylinder_section_controller src/ur10e_moveit2_cylinder_section_controller.cpp)
+target_include_directories(ur10e_moveit2_cylinder_section_controller PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(ur10e_moveit2_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(ur10e_moveit2_cylinder_section_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 ament_target_dependencies(
-  ur10e_moveit2_controller
+  ur10e_moveit2_cylinder_section_controller
   "moveit_ros_planning_interface"
   "rclcpp"
 )
@@ -45,6 +45,17 @@ ament_target_dependencies(
   "rclcpp"
 )
 
+add_executable(ur10e_moveit2_rectangle_paused_controller src/ur10e_moveit2_rectangle_paused_controller.cpp)
+target_include_directories(ur10e_moveit2_rectangle_paused_controller PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(ur10e_moveit2_rectangle_paused_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  ur10e_moveit2_rectangle_paused_controller
+  "moveit_ros_planning_interface"
+  "rclcpp"
+)
+
 add_executable(sim_camera_adapter src/sim_camera_adapter.cpp)
 target_include_directories(sim_camera_adapter PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -56,7 +67,12 @@ ament_target_dependencies(
   "rclcpp"
 )
 
-install(TARGETS ur10e_moveit2_position_controller ur10e_moveit2_rectangle_controller ur10e_moveit2_controller sim_camera_adapter
+install(TARGETS
+  ur10e_moveit2_position_controller
+  ur10e_moveit2_rectangle_controller
+  ur10e_moveit2_rectangle_paused_controller
+  ur10e_moveit2_cylinder_section_controller
+  sim_camera_adapter
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files.
