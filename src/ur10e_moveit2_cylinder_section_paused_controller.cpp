@@ -11,6 +11,28 @@
 #include <moveit_msgs/msg/attached_collision_object.hpp>
 #include <moveit_msgs/msg/collision_object.hpp>
 
+std::vector<geometry_msgs::msg::Pose> rotate(std::vector<geometry_msgs::msg::Pose> ps, float theta){
+    std::vector<geometry_msgs::msg::Pose> ps_r;
+    geometry_msgs::msg::Pose p_r;
+    tf2::Quaternion q_rot, q_new;
+    q_rot.setRPY(0.0, 0.0, theta);
+    for (unsigned int i = 0; i < size(ps); i++) {
+        geometry_msgs::msg::Pose p = ps.at(i);
+        p_r = p;
+        p_r.position.x = p.position.x * std::cos(theta) - p.position.y * std::sin(theta);
+        p_r.position.y = p.position.x * std::sin(theta) + p.position.y * std::cos(theta);
+        tf2::Quaternion q_orig = tf2::Quaternion(p_r.orientation.x, p_r.orientation.y, p_r.orientation.z, p_r.orientation.w);
+        q_new = q_rot * q_orig;
+        q_new.normalize();
+        p_r.orientation.w = q_new.w();
+        p_r.orientation.x = q_new.x();
+        p_r.orientation.y = q_new.y();
+        p_r.orientation.z = q_new.z();
+        ps_r.push_back(p_r);
+    }
+    return ps_r;
+}
+
 moveit_msgs::msg::CollisionObject create_collision_box(
         std::string frame_id,
         std::string object_id,
@@ -56,7 +78,7 @@ moveit_msgs::msg::CollisionObject create_collision_box(
     return collision_object;
 }
 
-std::vector<geometry_msgs::msg::Pose> cylinder_section(
+std::vector<geometry_msgs::msg::Pose> create_cylinder_section(
     double R = 0.3 /* radius of cylinder */,
     double step_size = 0.05 /* distance between curves */,
     double min_angle = M_PI / 8 /* start angle of cylinder section */,
@@ -119,8 +141,7 @@ std::vector<geometry_msgs::msg::Pose> cylinder_section(
             waypoints.push_back(target_pose);
         }
     }
-
-    return waypoints;
+    return rotate(waypoints, M_PI/4);
 }
 
 int main(int argc, char * argv[])
@@ -140,30 +161,32 @@ int main(int argc, char * argv[])
     using moveit::planning_interface::MoveGroupInterface;
     auto move_group_interface = MoveGroupInterface(node, PLANNING_GROUP);
     move_group_interface.setPlanningTime(15.0);
+    move_group_interface.setMaxVelocityScalingFactor(0.25);
+    move_group_interface.setMaxAccelerationScalingFactor(0.25);
 
     using moveit::planning_interface::PlanningSceneInterface;
     auto planning_scene_interface = PlanningSceneInterface();
 
     std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
-    
+
     // floor
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "floor",
         3.0, 3.0, 0.1,
         0.0, 0.0, -0.78,
-        0.0, 0.0, 0.0
+        0.0, 0.0, -M_PI/4
     ));
 
     // virtual walls
-    /*
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "wall1",
         0.1, 3.0, 3.0,
-        1.5, 0.0, -0.78, 
-        0.0, 0.0, 0.0
+        -0.21, -0.21, -0.78,
+        0.0, 0.0, M_PI/4
     ));
+    /*
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "wall2",
@@ -185,31 +208,48 @@ int main(int argc, char * argv[])
         0.0, -1.5, -0.78,
         0.0, 0.0, 0.0
     ));
-
+    */
     // boxes on which the ur10 stands
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
-        "box1",
-        0.3, 0.45, 0.53,
-        -0.155, 0.0, -0.27,
-        0.0, 0.0, 0.0
-    ));
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "box2",
-        0.8, 0.8, 0.25,
-        0.0, 0.0, -0.655,
-        0.0, 0.0, 0.0
-    ));
-
-    // specimen
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
         "stand",
-        0.35, 0.35, 0.62,
-        0.5, 0.5, -0.47,
-        0.0, 0.0, 0.0
+        0.2, 0.2, 0.53,
+        0.0, 0.0, -0.27,
+        0.0, 0.0, -M_PI/4
     ));
+    collision_objects.push_back(create_collision_box(
+        move_group_interface.getPlanningFrame(),
+        "linear_axis",
+        1.0, 2.15, 0.25,
+        -0.2, -0.2, -0.655,
+        0.0, 0.0, -M_PI/4
+    ));
+    // control box conveyor
+    collision_objects.push_back(create_collision_box(
+        move_group_interface.getPlanningFrame(),
+        "conveyor_control",
+        0.35, 0.48, 0.68,
+        0.85, -0.85, -0.44,
+        0.0, 0.0, -M_PI/4
+    ));
+    // control box UR10
+    collision_objects.push_back(create_collision_box(
+        move_group_interface.getPlanningFrame(),
+        "UR10_control",
+        0.8, 0.8, 0.8,
+        0.0, -1.3, -0.4,
+        0.0, 0.0, -M_PI/4
+    ));
+    // conveyor
+    collision_objects.push_back(create_collision_box(
+        move_group_interface.getPlanningFrame(),
+        "conveyor",
+        2.6, 1.54, 0.55,
+        0.95, 0.95, -0.45,
+        0.0, 0.0, -M_PI/4
+    ));
+    /*
+    // specimen
     collision_objects.push_back(create_collision_box(
         move_group_interface.getPlanningFrame(),
         "specimen",
@@ -241,39 +281,50 @@ int main(int argc, char * argv[])
         return 0;
     };
 
-    std::vector<geometry_msgs::msg::Pose> waypoints = cylinder_section();
-    geometry_msgs::msg::Pose target_pose = waypoints.at(0);
+    std::vector<geometry_msgs::msg::Pose> waypoints = create_cylinder_section();
 
-    move_group_interface.setPoseTarget(target_pose);
-    // Create a plan to that target pose
-    auto const [success, plan] = [&move_group_interface]{
-        moveit::planning_interface::MoveGroupInterface::Plan msg;
-        auto const ok = static_cast<bool>(move_group_interface.plan(msg));
-        return std::make_pair(ok, msg);
-    }();
-
-    // Execute the plan
-    if(success) {
-        move_group_interface.execute(plan);
-    } else {
-        RCLCPP_ERROR(logger, "Planning failed!");
-        rclcpp::shutdown();
-        return 0;
-    }
-
+    // check if whole trajectory is valid
+    bool is_valid_trajectory = false;
     moveit_msgs::msg::RobotTrajectory trajectory;
-    const double jump_threshold = 20.0;
-    const double eef_step = 0.01;
+    const double jump_threshold = 50.0;
+    const double eef_step = 0.02;
     double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
     if (fraction == 1.0){
         // valid trajectory
         // if fraction is less than 1.0 it means that only a fraction of the waypoints could be reached in cartesian space
         // if fraction is -1.0 there was an error
-        move_group_interface.execute(trajectory);
+        is_valid_trajectory = true;
+        RCLCPP_INFO(logger, "Planning succeeded");
+        // move_group_interface.execute(trajectory);
     } else {
         RCLCPP_ERROR(logger, "Planning failed at (%.2f%%)", fraction * 100.0);
         rclcpp::shutdown();
         return 0;
+    }
+
+    unsigned int wait_milliseconds = 1000;
+    if (is_valid_trajectory){
+        for (unsigned int i = 0; i < waypoints.size() - 1; i++){
+            std::vector<geometry_msgs::msg::Pose>::const_iterator first = waypoints.begin() + i;
+            std::vector<geometry_msgs::msg::Pose>::const_iterator last = waypoints.begin() + i + 1;
+            std::vector<geometry_msgs::msg::Pose> sub_path(first, last);
+            fraction = move_group_interface.computeCartesianPath(sub_path, eef_step, jump_threshold, trajectory);
+            if (fraction == 1.0){
+                // valid trajectory
+                // if fraction is less than 1.0 it means that only a fraction of the waypoints could be reached in cartesian space
+                // if fraction is -1.0 there was an error
+                is_valid_trajectory = true;
+                RCLCPP_INFO(logger, "Planning to: x_%.2f y_%.2f z_%.2f succeeded", waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z);
+                move_group_interface.execute(trajectory);
+                // pause to record pcd
+                RCLCPP_INFO(logger, "Pausing for %i milliseconds to enable stable point cloud recording", wait_milliseconds);
+                std::this_thread::sleep_for(std::chrono::milliseconds(wait_milliseconds));
+            } else {
+                RCLCPP_ERROR(logger, "Planning to: x_%.2f y_%.2f z_%.2f failed at (%.2f%%)", waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z, fraction * 100.0);
+                rclcpp::shutdown();
+                return 0;
+            }
+        }
     }
 
     rclcpp::shutdown();

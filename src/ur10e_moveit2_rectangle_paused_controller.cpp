@@ -273,7 +273,7 @@ int main(int argc, char * argv[])
         0.0, 0.0, M_PI/4.0
     );
     collision_objects.push_back(camera);
-    // planning_scene_interface.applyCollisionObjects(collision_objects);
+    planning_scene_interface.applyCollisionObjects(collision_objects);
 
     // attach camera to wrist
     moveit_msgs::msg::AttachedCollisionObject camera2;
