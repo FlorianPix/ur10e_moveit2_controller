@@ -15,16 +15,12 @@ using namespace std::chrono_literals;
 class SimCameraAdapter : public rclcpp::Node
 {
 public:
-  SimCameraAdapter()
-  : Node("sim_camera_adapter")
+  SimCameraAdapter() : Node("sim_camera_adapter")
   {
-    tf_buffer_ =
-      std::make_unique<tf2_ros::Buffer>(this->get_clock());
-    tf_listener_ =
-      std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-    timer_ = this->create_wall_timer(
-      0.01s, std::bind(&SimCameraAdapter::on_timer, this));
+    timer_ = this->create_wall_timer(0.01s, std::bind(&SimCameraAdapter::on_timer, this));
 
     publisher_camera_pose_ = this->create_publisher<geometry_msgs::msg::Pose>("/depth_camera/pose", 10);
   }

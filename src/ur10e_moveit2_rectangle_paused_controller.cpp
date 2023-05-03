@@ -10,145 +10,8 @@
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit_msgs/msg/attached_collision_object.hpp>
 #include <moveit_msgs/msg/collision_object.hpp>
-
-std::vector<geometry_msgs::msg::Pose> rotate(std::vector<geometry_msgs::msg::Pose> ps, float theta){
-    std::vector<geometry_msgs::msg::Pose> ps_r;
-    geometry_msgs::msg::Pose p_r;
-    tf2::Quaternion q_rot, q_new;
-    q_rot.setRPY(0.0, 0.0, theta);
-    for (unsigned int i = 0; i < size(ps); i++) {
-        geometry_msgs::msg::Pose p = ps.at(i);
-        p_r = p;
-        p_r.position.x = p.position.x * std::cos(theta) - p.position.y * std::sin(theta);
-        p_r.position.y = p.position.x * std::sin(theta) + p.position.y * std::cos(theta);
-        tf2::Quaternion q_orig = tf2::Quaternion(p_r.orientation.x, p_r.orientation.y, p_r.orientation.z, p_r.orientation.w);
-        q_new = q_rot * q_orig;
-        q_new.normalize();
-        p_r.orientation.w = q_new.w();
-        p_r.orientation.x = q_new.x();
-        p_r.orientation.y = q_new.y();
-        p_r.orientation.z = q_new.z();
-        ps_r.push_back(p_r);
-    }
-    return ps_r;
-}
-
-moveit_msgs::msg::CollisionObject create_collision_box(
-        std::string frame_id,
-        std::string object_id,
-        double size_x,
-        double size_y,
-        double size_z,
-        double position_x,
-        double position_y,
-        double position_z,
-        double roll,
-        double pitch,
-        double yaw
-    ){
-    moveit_msgs::msg::CollisionObject collision_object;
-    collision_object.header.frame_id = frame_id;
-
-    // The id of the object is used to identify it.
-    collision_object.id = object_id;
-
-    // Define a box to add to the world.
-    shape_msgs::msg::SolidPrimitive primitive;
-    primitive.type = primitive.BOX;
-    primitive.dimensions.resize(3);
-    primitive.dimensions[primitive.BOX_X] = size_x;
-    primitive.dimensions[primitive.BOX_Y] = size_y;
-    primitive.dimensions[primitive.BOX_Z] = size_z;
-
-    // Define a pose for the box (specified relative to frame_id).
-    geometry_msgs::msg::Pose box_pose;
-    tf2::Quaternion q;
-    q.setRPY(roll, pitch, yaw);
-    box_pose.orientation.w = q.w();
-    box_pose.orientation.x = q.x();
-    box_pose.orientation.y = q.y();
-    box_pose.orientation.z = q.z();
-    box_pose.position.x = position_x;
-    box_pose.position.y = position_y;
-    box_pose.position.z = position_z;
-
-    collision_object.primitives.push_back(primitive);
-    collision_object.primitive_poses.push_back(box_pose);
-    collision_object.operation = collision_object.ADD;
-
-    return collision_object;
-}
-
-std::vector<geometry_msgs::msg::Pose> create_rectangle(
-    double y_min = -0.75 /* x position of first point of rectangle */,
-    double x_offset = 0.6 /* y position of first point of rectangle */,
-    double z_min = 0.0 /* z position of first point of rectangle */,
-    double y_max = 0.75 /* x position of last point of rectangle */,
-    double z_max = 1.0 /* z position of last point of rectangle */,
-    double steps = 4.0 /* divisions of the rectangle */){
-    std::vector<geometry_msgs::msg::Pose> waypoints;
-    geometry_msgs::msg::Pose target_pose;
-
-    double height_diff = fabs(z_max - z_min);
-    double step_size = height_diff / steps;
-
-    for (double pitch = -M_PI/16; pitch <= M_PI/16; pitch += M_PI/16){
-        for (double z = 0.0; z < height_diff; z += 2 * step_size) {
-            for (double y = y_min; y < y_max; y += 0.25){
-                target_pose.position.x = x_offset;
-                target_pose.position.z = z_min + z;
-                target_pose.position.y = y;
-                tf2::Quaternion q;
-                q.setRPY(M_PI/2 + pitch, M_PI/4, M_PI/2 + pitch);
-                target_pose.orientation.w = q.w();
-                target_pose.orientation.x = q.x();
-                target_pose.orientation.y = q.y();
-                target_pose.orientation.z = q.z();
-                waypoints.push_back(target_pose);
-            }
-            for (double intermediate_z = z; intermediate_z < z + step_size; intermediate_z += 0.25){
-                target_pose.position.x = x_offset;
-                target_pose.position.z = z_min + intermediate_z;
-                target_pose.position.y = y_max;
-                tf2::Quaternion q;
-                q.setRPY(M_PI/2 + pitch, M_PI/4, M_PI/2 + pitch);
-                target_pose.orientation.w = q.w();
-                target_pose.orientation.x = q.x();
-                target_pose.orientation.y = q.y();
-                target_pose.orientation.z = q.z();
-                waypoints.push_back(target_pose);
-            }
-            for (double y = y_max; y > y_min; y -= 0.25){
-                target_pose.position.x = x_offset;
-                target_pose.position.z = z_min + z + step_size;
-                target_pose.position.y = y;
-                tf2::Quaternion q;
-                q.setRPY(M_PI/2 + pitch, M_PI/4, M_PI/2 + pitch);
-                target_pose.orientation.w = q.w();
-                target_pose.orientation.x = q.x();
-                target_pose.orientation.y = q.y();
-                target_pose.orientation.z = q.z();
-                waypoints.push_back(target_pose);
-            }
-            if (z < z_max){
-                for (double intermediate_z = z + step_size; intermediate_z < z + 2 * step_size; intermediate_z += 0.25){
-                    target_pose.position.x = x_offset;
-                    target_pose.position.z = z_min + intermediate_z;
-                    target_pose.position.y = y_min;
-                    tf2::Quaternion q;
-                    q.setRPY(M_PI/2 + pitch, M_PI/4, M_PI/2 + pitch);
-                    target_pose.orientation.w = q.w();
-                    target_pose.orientation.x = q.x();
-                    target_pose.orientation.y = q.y();
-                    target_pose.orientation.z = q.z();
-                    waypoints.push_back(target_pose);
-                }
-            }
-        }
-    }
-    waypoints.push_back(waypoints.at(0));
-    return rotate(waypoints, 0); // M_PI/4
-}
+#include "trajectory.h"
+#include "collision.h"
 
 int main(int argc, char * argv[])
 {
@@ -158,120 +21,51 @@ int main(int argc, char * argv[])
         "ur10e_moveit2_controller",
         rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
     );
+    bool collision_aware = node->get_parameter("collision_aware").as_bool();
+    bool collision_walls = node->get_parameter("collision_walls").as_bool();
+    std::vector<double> floor_coll = node->get_parameter("collision.floor").as_double_array();
+    std::vector<double> wall1_coll = node->get_parameter("collision.wall1").as_double_array();
+    std::vector<double> wall2_coll = node->get_parameter("collision.wall2").as_double_array();
+    std::vector<double> wall3_coll = node->get_parameter("collision.wall3").as_double_array();
+    std::vector<double> wall4_coll = node->get_parameter("collision.wall4").as_double_array();
+    std::vector<double> stand_coll = node->get_parameter("collision.stand").as_double_array();
+    std::vector<double> linear_axis_coll = node->get_parameter("collision.linear_axis").as_double_array();
+    std::vector<double> conveyor_control_coll = node->get_parameter("collision.conveyor_control").as_double_array();
+    std::vector<double> UR10_control_coll = node->get_parameter("collision.UR10_control").as_double_array();
+    std::vector<double> conveyor_coll = node->get_parameter("collision.conveyor").as_double_array();
+    std::vector<double> specimen_coll = node->get_parameter("collision.specimen").as_double_array();
+    std::vector<double> camera_coll = node->get_parameter("collision.camera").as_double_array();
 
     static const std::string PLANNING_GROUP = "ur_manipulator";
     // Create a ROS logger
     auto const logger = rclcpp::get_logger("ur10e_moveit2_controller");
 
-    // Create the MoveIt MoveGroup Interface
     using moveit::planning_interface::MoveGroupInterface;
     auto move_group_interface = MoveGroupInterface(node, PLANNING_GROUP);
     move_group_interface.setPlanningTime(15.0);
     move_group_interface.setMaxVelocityScalingFactor(0.25);
     move_group_interface.setMaxAccelerationScalingFactor(0.25);
-
     using moveit::planning_interface::PlanningSceneInterface;
     auto planning_scene_interface = PlanningSceneInterface();
 
     std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
-
-    // floor
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "floor",
-        3.0, 3.0, 0.1,
-        0.0, 0.0, -0.78,
-        0.0, 0.0, -M_PI/4
-    ));
-
-    // virtual walls
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "wall1",
-        0.1, 3.0, 3.0,
-        -0.21, -0.21, -0.78,
-        0.0, 0.0, M_PI/4
-    ));
-    /*
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "wall2",
-        3.0, 0.1, 3.0,
-        0.0, 1.5, -0.78,
-        0.0, 0.0, 0.0
-    ));
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "wall3",
-        0.1, 3.0, 3.0,
-        -0.5, 0.0, -0.78,
-        0.0, 0.0, 0.0
-    ));
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "wall4",
-        3.0, 0.1, 3.0,
-        0.0, -1.5, -0.78,
-        0.0, 0.0, 0.0
-    ));
-    */
-    // boxes on which the ur10 stands
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "stand",
-        0.2, 0.2, 0.53,
-        0.0, 0.0, -0.27,
-        0.0, 0.0, -M_PI/4
-    ));
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "linear_axis",
-        1.0, 2.15, 0.25,
-        -0.2, -0.2, -0.655,
-        0.0, 0.0, -M_PI/4
-    ));
-    // control box conveyor
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "conveyor_control",
-        0.35, 0.48, 0.68,
-        0.85, -0.85, -0.44,
-        0.0, 0.0, -M_PI/4
-    ));
-    // control box UR10
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "UR10_control",
-        0.8, 0.8, 0.8,
-        0.0, -1.3, -0.4,
-        0.0, 0.0, -M_PI/4
-    ));
-    // conveyor
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "conveyor",
-        2.6, 1.54, 0.55,
-        0.95, 0.95, -0.45,
-        0.0, 0.0, -M_PI/4
-    ));
-    /*
-    // specimen
-    collision_objects.push_back(create_collision_box(
-        move_group_interface.getPlanningFrame(),
-        "specimen",
-        0.1, 0.1, 0.25,
-        0.5, 0.5, -0.035,
-        0.0, 0.0, 0.0
-    ));
-    */
+    if (collision_aware) {
+        collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "floor", floor_coll[0], floor_coll[1], floor_coll[2], floor_coll[3], floor_coll[4], floor_coll[5], floor_coll[6], floor_coll[7], floor_coll[8]));
+        collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "stand", stand_coll[0], stand_coll[1], stand_coll[2], stand_coll[3], stand_coll[4], stand_coll[5], stand_coll[6], stand_coll[7], stand_coll[8]));
+        collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "linear_axis", linear_axis_coll[0], linear_axis_coll[1], linear_axis_coll[2], linear_axis_coll[3], linear_axis_coll[4], linear_axis_coll[5], linear_axis_coll[6], linear_axis_coll[7], linear_axis_coll[8]));
+        collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "conveyor_control", conveyor_control_coll[0], conveyor_control_coll[1], conveyor_control_coll[2], conveyor_control_coll[3], conveyor_control_coll[4], conveyor_control_coll[5], conveyor_control_coll[6], conveyor_control_coll[7], conveyor_control_coll[8]));
+        collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "UR10_control", UR10_control_coll[0], UR10_control_coll[1], UR10_control_coll[2], UR10_control_coll[3], UR10_control_coll[4], UR10_control_coll[5], UR10_control_coll[6], UR10_control_coll[7], UR10_control_coll[8]));
+        collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "conveyor", conveyor_coll[0], conveyor_coll[1], conveyor_coll[2], conveyor_coll[3], conveyor_coll[4], conveyor_coll[5], conveyor_coll[6], conveyor_coll[7], conveyor_coll[8]));
+        collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "specimen", specimen_coll[0], specimen_coll[1], specimen_coll[2], specimen_coll[3], specimen_coll[4], specimen_coll[5], specimen_coll[6], specimen_coll[7], specimen_coll[8]));
+        if (collision_walls) {
+            collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "wall1", wall1_coll[0], wall1_coll[1], wall1_coll[2], wall1_coll[3], wall1_coll[4], wall1_coll[5], wall1_coll[6], wall1_coll[7], wall1_coll[8]));
+            collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "wall2", wall2_coll[0], wall2_coll[1], wall2_coll[2], wall2_coll[3], wall2_coll[4], wall2_coll[5], wall2_coll[6], wall2_coll[7], wall2_coll[8]));
+            collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "wall3", wall3_coll[0], wall3_coll[1], wall3_coll[2], wall3_coll[3], wall3_coll[4], wall3_coll[5], wall3_coll[6], wall3_coll[7], wall3_coll[8]));
+            collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "wall4", wall4_coll[0], wall4_coll[1], wall4_coll[2], wall4_coll[3], wall4_coll[4], wall4_coll[5], wall4_coll[6], wall4_coll[7], wall4_coll[8]));
+        }
+    }
     // camera
-    moveit_msgs::msg::CollisionObject camera = create_collision_box(
-        move_group_interface.getEndEffectorLink(),
-        "camera",
-        0.18, 0.03, 0.05,
-        0.0, 0.0, 0.04,
-        0.0, 0.0, M_PI/4.0
-    );
+    moveit_msgs::msg::CollisionObject camera = create_collision_box(move_group_interface.getEndEffectorLink(), "camera", camera_coll[0], camera_coll[1], camera_coll[2], camera_coll[3], camera_coll[4], camera_coll[5], camera_coll[6], camera_coll[7], camera_coll[8]);
     collision_objects.push_back(camera);
     planning_scene_interface.applyCollisionObjects(collision_objects);
 
@@ -282,7 +76,7 @@ int main(int argc, char * argv[])
     
     std::vector<std::string> touch_links;
     if (!planning_scene_interface.applyAttachedCollisionObject(camera2)) {
-        RCLCPP_ERROR(logger, "Couldn't attach object!");
+        RCLCPP_ERROR(node->get_logger(), "Couldn't attach object!");
         rclcpp::shutdown();
         return 0;
     };
@@ -300,10 +94,10 @@ int main(int argc, char * argv[])
         // if fraction is less than 1.0 it means that only a fraction of the waypoints could be reached in cartesian space
         // if fraction is -1.0 there was an error
         is_valid_trajectory = true;
-        RCLCPP_INFO(logger, "Planning succeeded");
+        RCLCPP_INFO(node->get_logger(), "Planning succeeded");
         // move_group_interface.execute(trajectory);
     } else {
-        RCLCPP_ERROR(logger, "Planning failed at (%.2f%%)", fraction * 100.0);
+        RCLCPP_ERROR(node->get_logger(), "Planning failed at (%.2f%%)", fraction * 100.0);
         rclcpp::shutdown();
         return 0;
     }
@@ -320,13 +114,13 @@ int main(int argc, char * argv[])
                 // if fraction is less than 1.0 it means that only a fraction of the waypoints could be reached in cartesian space
                 // if fraction is -1.0 there was an error
                 is_valid_trajectory = true;
-                RCLCPP_INFO(logger, "Planning to: x_%.2f y_%.2f z_%.2f succeeded", waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z);
+                RCLCPP_INFO(node->get_logger(), "Planning to: x_%.2f y_%.2f z_%.2f succeeded", waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z);
                 move_group_interface.execute(trajectory);
                 // pause to record pcd
-                RCLCPP_INFO(logger, "Pausing for %i milliseconds to enable stable point cloud recording", wait_milliseconds);
+                RCLCPP_INFO(node->get_logger(), "Pausing for %i milliseconds to enable stable point cloud recording", wait_milliseconds);
                 std::this_thread::sleep_for(std::chrono::milliseconds(wait_milliseconds));
             } else {
-                RCLCPP_ERROR(logger, "Planning to: x_%.2f y_%.2f z_%.2f failed at (%.2f%%)", waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z, fraction * 100.0);
+                RCLCPP_ERROR(node->get_logger(), "Planning to: x_%.2f y_%.2f z_%.2f failed at (%.2f%%)", waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z, fraction * 100.0);
                 rclcpp::shutdown();
                 return 0;
             }

@@ -65,24 +65,23 @@ def get_robot_description_semantic():
     
     
 def generate_launch_description():
-    # generate_common_hybrid_launch_description() returns a list of nodes to launch
     robot_description = get_robot_description()
     robot_description_semantic = get_robot_description_semantic()
     config = os.path.join(
         get_package_share_directory('ur10e_moveit2_controller'),
         'config',
-        'ur10e_moveit2_rectangle_paused_controller.yaml'
+        'rectangle_controller.yaml'
     )
-    demo_node = Node(
-        package="ur10e_moveit2_controller",
-        executable="ur10e_moveit2_rectangle_paused_controller",
-        name="ur10e_moveit2_rectangle_paused_controller",
-        output="screen",
-        parameters=[
-            robot_description,
-            robot_description_semantic,
-            config,
-        ],
-    )
-
-    return launch.LaunchDescription([demo_node])
+    return launch.LaunchDescription([
+        Node(
+            package="ur10e_moveit2_controller",
+            executable="rectangle_controller",
+            name="rectangle_controller",
+            output="screen",
+            parameters=[
+                robot_description,
+                robot_description_semantic,
+                config,
+            ],
+        ),
+    ])
