@@ -10,58 +10,24 @@ find_package(ament_cmake REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rclcpp REQUIRED)
 
-
-add_executable(ur10e_moveit2_position_controller src/ur10e_moveit2_position_controller.cpp)
-target_include_directories(ur10e_moveit2_position_controller PUBLIC
+add_executable(controller src/controller.cpp)
+target_include_directories(controller PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(ur10e_moveit2_position_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 ament_target_dependencies(
-  ur10e_moveit2_position_controller
+  controller
   "moveit_ros_planning_interface"
   "rclcpp"
 )
 
-add_executable(ur10e_moveit2_cylinder_section_controller src/ur10e_moveit2_cylinder_section_controller.cpp)
-target_include_directories(ur10e_moveit2_cylinder_section_controller PUBLIC
+add_executable(position_controller src/position_controller.cpp)
+target_include_directories(position_controller PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(ur10e_moveit2_cylinder_section_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(position_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 ament_target_dependencies(
-  ur10e_moveit2_cylinder_section_controller
-  "moveit_ros_planning_interface"
-  "rclcpp"
-)
-
-add_executable(ur10e_moveit2_cylinder_section_paused_controller src/ur10e_moveit2_cylinder_section_paused_controller.cpp)
-target_include_directories(ur10e_moveit2_cylinder_section_paused_controller PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(ur10e_moveit2_cylinder_section_paused_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(
-  ur10e_moveit2_cylinder_section_paused_controller
-  "moveit_ros_planning_interface"
-  "rclcpp"
-)
-
-add_executable(ur10e_moveit2_rectangle_controller src/ur10e_moveit2_rectangle_controller.cpp)
-target_include_directories(ur10e_moveit2_rectangle_controller PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(ur10e_moveit2_rectangle_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(
-  ur10e_moveit2_rectangle_controller
-  "moveit_ros_planning_interface"
-  "rclcpp"
-)
-
-add_executable(ur10e_moveit2_rectangle_paused_controller src/ur10e_moveit2_rectangle_paused_controller.cpp)
-target_include_directories(ur10e_moveit2_rectangle_paused_controller PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(ur10e_moveit2_rectangle_paused_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(
-  ur10e_moveit2_rectangle_paused_controller
+  position_controller
   "moveit_ros_planning_interface"
   "rclcpp"
 )
@@ -77,25 +43,10 @@ ament_target_dependencies(
   "rclcpp"
 )
 
-add_executable(controller src/controller.cpp)
-target_include_directories(controller PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(
-  controller
-  "moveit_ros_planning_interface"
-  "rclcpp"
-)
-
 install(TARGETS
-  ur10e_moveit2_position_controller
-  ur10e_moveit2_rectangle_controller
-  ur10e_moveit2_rectangle_paused_controller
-  ur10e_moveit2_cylinder_section_controller
-  ur10e_moveit2_cylinder_section_paused_controller
-  sim_camera_adapter
   controller
+  position_controller
+  sim_camera_adapter
   DESTINATION lib/${PROJECT_NAME})
 
 # Install config and launch files.

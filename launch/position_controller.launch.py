@@ -6,7 +6,6 @@ import sys
 from launch_ros.actions import Node
 from launch.substitutions import PathJoinSubstitution, Command, FindExecutable
 from launch_ros.substitutions import FindPackageShare
-from ament_index_python.packages import get_package_share_directory
 
 
 def get_robot_description():
@@ -68,20 +67,14 @@ def generate_launch_description():
     # generate_common_hybrid_launch_description() returns a list of nodes to launch
     robot_description = get_robot_description()
     robot_description_semantic = get_robot_description_semantic()
-    config = os.path.join(
-        get_package_share_directory('ur10e_moveit2_controller'),
-        'config',
-        'ur10e_moveit2_rectangle_paused_controller.yaml'
-    )
     demo_node = Node(
         package="ur10e_moveit2_controller",
-        executable="ur10e_moveit2_rectangle_paused_controller",
-        name="ur10e_moveit2_rectangle_paused_controller",
+        executable="position_controller",
+        name="position_controller",
         output="screen",
         parameters=[
             robot_description,
             robot_description_semantic,
-            config,
         ],
     )
 

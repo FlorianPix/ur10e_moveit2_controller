@@ -36,6 +36,20 @@ int main(int argc, char * argv[])
     std::vector<double> specimen_coll = node->get_parameter("collision.specimen").as_double_array();
     std::vector<double> camera_coll = node->get_parameter("collision.camera").as_double_array();
     unsigned int wait_milliseconds = node->get_parameter("wait_milliseconds").as_int();
+    bool use_rectangle_trajectory = node->get_parameter("use_rectangle_trajectory").as_bool();
+    double rectangle_y_min = node->get_parameter("rectangle.y_min").as_double();
+    double rectangle_x_offset = node->get_parameter("rectangle.x_offset").as_double();
+    double rectangle_z_min = node->get_parameter("rectangle.z_min").as_double();
+    double rectangle_y_max = node->get_parameter("rectangle.y_max").as_double();
+    double rectangle_z_max = node->get_parameter("rectangle.z_max").as_double();
+    double rectangle_steps = node->get_parameter("rectangle.steps").as_double();
+    double cylinder_section_R = node->get_parameter("cylinder_section.R").as_double();
+    double cylinder_section_step_size = node->get_parameter("cylinder_section.step_size").as_double();
+    double cylinder_section_min_angle = node->get_parameter("cylinder_section.min_angle").as_double();
+    double cylinder_section_max_angle = node->get_parameter("cylinder_section.max_angle").as_double();
+    double cylinder_section_x_offset = node->get_parameter("cylinder_section.x_offset").as_double();
+    double cylinder_section_y_offset = node->get_parameter("cylinder_section.y_offset").as_double();
+    double cylinder_section_z_offset = node->get_parameter("cylinder_section.z_offset").as_double();
 
     static const std::string PLANNING_GROUP = "ur_manipulator";
 
@@ -80,7 +94,27 @@ int main(int argc, char * argv[])
         return 0;
     };
 
-    std::vector<geometry_msgs::msg::Pose> waypoints = create_rectangle();
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    if (use_rectangle_trajectory){
+        waypoints = create_rectangle(
+            rectangle_y_min,
+            rectangle_x_offset,
+            rectangle_z_min,
+            rectangle_y_max,
+            rectangle_z_max,
+            rectangle_steps
+        );
+    } else {
+        waypoints = create_cylinder_section(
+            cylinder_section_R,
+            cylinder_section_step_size,
+            cylinder_section_min_angle,
+            cylinder_section_max_angle,
+            cylinder_section_x_offset,
+            cylinder_section_y_offset,
+            cylinder_section_z_offset
+        );
+    }
 
     // check if whole trajectory is valid
     bool is_valid_trajectory = false;
@@ -97,6 +131,7 @@ int main(int argc, char * argv[])
         // move_group_interface.execute(trajectory);
     } else {
         RCLCPP_ERROR(node->get_logger(), "Planning failed at (%.2f%%)", fraction * 100.0);
+        RCLCPP_INFO(node->get_logger(), "First waypoint would have been x_%f y_%f z_%f", waypoints[0].position.x, waypoints[0].position.y, waypoints[0].position.z);
         rclcpp::shutdown();
         return 0;
     }
