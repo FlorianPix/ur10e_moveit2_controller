@@ -22,6 +22,10 @@
         y_max: 0.5
         z_max: 1.0
         steps: 4.0
+        pitch_adjust: False
+        pitch_min: 0.0
+        pitch_max: 0.0
+        pitch_step: 0.0
     cylinder_section: 
       R: 0.1
       step_size: 0.05
@@ -30,5 +34,5 @@
       x_offset: 0.5
       y_offset: 0.5
       z_offset: 0.25
-    wait_milliseconds: 1000
+    wait_milliseconds: 2000
     use_rectangle_trajectory: True

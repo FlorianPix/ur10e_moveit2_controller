@@ -21,6 +21,26 @@ ament_target_dependencies(
   "rclcpp"
 )
 
+add_executable(publisher src/publisher.cpp)
+target_include_directories(publisher PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(publisher PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  publisher
+  "rclcpp"
+)
+
+add_executable(subscriber src/subscriber.cpp)
+target_include_directories(subscriber PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(subscriber PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  subscriber
+  "rclcpp"
+)
+
 add_executable(position_controller src/position_controller.cpp)
 target_include_directories(position_controller PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -45,6 +65,8 @@ ament_target_dependencies(
 
 install(TARGETS
   controller
+  publisher
+  subscriber
   position_controller
   sim_camera_adapter
   DESTINATION lib/${PROJECT_NAME})

@@ -106,14 +106,21 @@ std::vector<geometry_msgs::msg::Pose> create_rectangle(
     double z_min = 0.1 /* z position of first point of rectangle */,
     double y_max = 0.5 /* x position of last point of rectangle */,
     double z_max = 0.5 /* z position of last point of rectangle */,
-    double steps = 4.0 /* divisions of the rectangle */){
+    double steps = 4.0 /* divisions of the rectangle */,
+    double pitch_min = -M_PI/16,
+    double pitch_max = M_PI/16,
+    double pitch_step = M_PI/16,
+    bool pitch_adjust = false) {
     std::vector<geometry_msgs::msg::Pose> waypoints;
     geometry_msgs::msg::Pose target_pose;
 
     double height_diff = fabs(z_max - z_min);
     double step_size = height_diff / steps;
 
-    for (double pitch = -M_PI/16; pitch <= M_PI/16; pitch += M_PI/16){
+    for (double pitch = pitch_min; pitch <= pitch_max; pitch += pitch_step){
+        if(!pitch_adjust){
+            pitch = 0.0;
+        }
         for (double z = 0.0; z < height_diff; z += 2 * step_size) {
             for (double y = y_min; y < y_max; y += 0.25){
                 target_pose.position.x = x_offset;
@@ -165,6 +172,9 @@ std::vector<geometry_msgs::msg::Pose> create_rectangle(
                     waypoints.push_back(target_pose);
                 }
             }
+        }
+        if(!pitch_adjust){
+            break;
         }
     }
     waypoints.push_back(waypoints.at(0));

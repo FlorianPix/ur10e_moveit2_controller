@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include <chrono>
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
@@ -10,17 +11,41 @@
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit_msgs/msg/attached_collision_object.hpp>
 #include <moveit_msgs/msg/collision_object.hpp>
+#include "std_msgs/msg/bool.hpp"
 #include "trajectory.h"
 #include "collision.h"
+
+using std::placeholders::_1;
+using namespace std::chrono_literals;
+
+class Controller : public rclcpp::Node
+{
+public:
+    double timer_interval = 1.0;
+    std_msgs::msg::Bool finished_msg = std_msgs::msg::Bool();
+
+    Controller() : Node("ur10e_moveit2_controller", rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)){
+        finished_msg.data = true;
+        publisher_ = this->create_publisher<std_msgs::msg::Bool>("/finished", 10);
+        timer_ = rclcpp::create_timer(this, this->get_clock(), rclcpp::Duration(timer_interval*1e9), std::bind(&Controller::timer_callback, this));
+    }
+
+    void timer_callback()
+    {
+        this->publisher_->publish(finished_msg);
+    }
+
+private:
+	rclcpp::TimerBase::SharedPtr timer_;
+	rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr publisher_;
+};
 
 int main(int argc, char * argv[])
 {
     // Initialize ROS and create the Node
     rclcpp::init(argc, argv);
-    auto const node = std::make_shared<rclcpp::Node>(
-        "ur10e_moveit2_controller",
-        rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
-    );
+    auto node = std::make_shared<Controller>();
+
     bool collision_aware = node->get_parameter("collision_aware").as_bool();
     bool collision_walls = node->get_parameter("collision_walls").as_bool();
     std::vector<double> floor_coll = node->get_parameter("collision.floor").as_double_array();
@@ -43,6 +68,10 @@ int main(int argc, char * argv[])
     double rectangle_y_max = node->get_parameter("rectangle.y_max").as_double();
     double rectangle_z_max = node->get_parameter("rectangle.z_max").as_double();
     double rectangle_steps = node->get_parameter("rectangle.steps").as_double();
+    double rectangle_pitch_min = node->get_parameter("rectangle.pitch_min").as_double();
+    double rectangle_pitch_max = node->get_parameter("rectangle.pitch_max").as_double();
+    double rectangle_pitch_step = node->get_parameter("rectangle.pitch_step").as_double();
+    bool rectangle_pitch_adjust = node->get_parameter("rectangle.pitch_adjust").as_bool();
     double cylinder_section_R = node->get_parameter("cylinder_section.R").as_double();
     double cylinder_section_step_size = node->get_parameter("cylinder_section.step_size").as_double();
     double cylinder_section_min_angle = node->get_parameter("cylinder_section.min_angle").as_double();
@@ -102,7 +131,11 @@ int main(int argc, char * argv[])
             rectangle_z_min,
             rectangle_y_max,
             rectangle_z_max,
-            rectangle_steps
+            rectangle_steps,
+            rectangle_pitch_min,
+            rectangle_pitch_max,
+            rectangle_pitch_step,
+            rectangle_pitch_adjust
         );
     } else {
         waypoints = create_cylinder_section(
@@ -159,7 +192,7 @@ int main(int argc, char * argv[])
             }
         }
     }
-
+    rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
 }
