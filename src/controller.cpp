@@ -35,6 +35,7 @@ int main(int argc, char * argv[])
     std::vector<double> conveyor_coll = node->get_parameter("collision.conveyor").as_double_array();
     std::vector<double> specimen_coll = node->get_parameter("collision.specimen").as_double_array();
     std::vector<double> camera_coll = node->get_parameter("collision.camera").as_double_array();
+    unsigned int wait_milliseconds = node->get_parameter("wait_milliseconds").as_int();
 
     static const std::string PLANNING_GROUP = "ur_manipulator";
 
@@ -71,7 +72,7 @@ int main(int argc, char * argv[])
     moveit_msgs::msg::AttachedCollisionObject camera2;
     camera2.link_name = "wrist_3_link";
     camera2.object = camera;
-    
+
     std::vector<std::string> touch_links;
     if (!planning_scene_interface.applyAttachedCollisionObject(camera2)) {
         RCLCPP_ERROR(node->get_logger(), "Couldn't attach object!");
@@ -100,7 +101,6 @@ int main(int argc, char * argv[])
         return 0;
     }
 
-    unsigned int wait_milliseconds = 1000;
     if (is_valid_trajectory){
         for (unsigned int i = 0; i < waypoints.size() - 1; i++){
             std::vector<geometry_msgs::msg::Pose>::const_iterator first = waypoints.begin() + i;

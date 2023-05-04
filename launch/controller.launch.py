@@ -70,13 +70,13 @@ def generate_launch_description():
     config = os.path.join(
         get_package_share_directory('ur10e_moveit2_controller'),
         'config',
-        'rectangle_controller.yaml'
+        'controller.yaml'
     )
     return launch.LaunchDescription([
         Node(
             package="ur10e_moveit2_controller",
-            executable="rectangle_controller",
-            name="rectangle_controller",
+            executable="controller",
+            name="controller",
             output="screen",
             parameters=[
                 robot_description,

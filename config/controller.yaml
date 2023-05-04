@@ -1,4 +1,4 @@
-/ur10e_moveit2_rectangle_paused_controller:
+/controller:
   ros__parameters:
     collision_aware: True
     collision_walls: False
@@ -22,3 +22,4 @@
         y_max: 0.75
         z_max: 1.0
         steps: 4.0
+    wait_milliseconds: 1000
