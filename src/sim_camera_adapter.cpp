@@ -49,7 +49,7 @@ private:
     pose_msg.position.x = t.transform.translation.x;
     pose_msg.position.y = t.transform.translation.y;
     pose_msg.position.z = t.transform.translation.z;
-    RCLCPP_INFO(this->get_logger(), "X: %f, Y: %f, Z: %f", pose_msg.position.x, pose_msg.position.y, pose_msg.position.z);
+    // RCLCPP_INFO(this->get_logger(), "X: %f, Y: %f, Z: %f", pose_msg.position.x, pose_msg.position.y, pose_msg.position.z);
     pose_msg.orientation.x = t.transform.rotation.w;
     pose_msg.orientation.y = t.transform.rotation.x;
     pose_msg.orientation.z = t.transform.rotation.y;
