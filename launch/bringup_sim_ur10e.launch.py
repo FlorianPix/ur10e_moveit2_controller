@@ -10,7 +10,6 @@ import subprocess
 def generate_launch_description():
     pkg_ur_bringup = get_package_share_directory('ur_bringup')
     pkg_ur10e_moveit2_controller = get_package_share_directory('ur10e_moveit2_controller')
-    pkg_pcd_to_ply = get_package_share_directory('pcd_demo')
 
     moveit_launch = PathJoinSubstitution([pkg_ur_bringup, 'launch', 'ur_control.launch.py'])
     rviz_launch = PathJoinSubstitution([pkg_ur_bringup, 'launch', 'ur_moveit.launch.py'])
@@ -47,7 +46,6 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
     ld.add_action(moveit)
     ld.add_action(rviz)
-    ld.add_action(controller)
     ld.add_action(tf_static)
     ld.add_action(sim_camera_adapter)
 
