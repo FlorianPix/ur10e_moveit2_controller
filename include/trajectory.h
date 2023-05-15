@@ -45,55 +45,41 @@ std::vector<geometry_msgs::msg::Pose> create_cylinder_section(
     std::vector<geometry_msgs::msg::Pose> waypoints;
     geometry_msgs::msg::Pose target_pose;
 
+    double end_step;
+    double angle_step_size = M_PI/16;
     for (int p = 0; p < 4; p += 2) {
-        for (double t = min_angle; t < max_angle; t += 0.1) {
-            target_pose.position.x = R * cos(t) + x_offset;
+        for (double t = min_angle; t < max_angle; t += angle_step_size) {
+            target_pose.position.y = R * cos(t) + y_offset;
             target_pose.position.z = R * sin(t) + z_offset;
-            target_pose.position.y = step_size * p + y_offset;
+            target_pose.position.x = step_size * p + x_offset;
             tf2::Quaternion q;
-            q.setRPY(M_PI, (M_PI/4.0)-(2.0/3.0)*(t-(M_PI/8.0)), 0.0);
+            q.setRPY((M_PI/4.0)-(2.0/3.0)*(t-(M_PI/8.0)), M_PI, 0.0);
             target_pose.orientation.w = q.w();
             target_pose.orientation.x = q.x();
             target_pose.orientation.y = q.y();
             target_pose.orientation.z = q.z();
             waypoints.push_back(target_pose);
         }
-        for (double t = 0.0; t < step_size; t += 0.01) {
-            target_pose.position.x = R * cos(max_angle) + x_offset;
-            target_pose.position.z = R * sin(max_angle) + z_offset;
-            target_pose.position.y = step_size * (p + t) + y_offset;
-            tf2::Quaternion q;
-            q.setRPY(M_PI, -M_PI/4.0, 0.0);
-            target_pose.orientation.w = q.w();
-            target_pose.orientation.x = q.x();
-            target_pose.orientation.y = q.y();
-            target_pose.orientation.z = q.z();
+        end_step = target_pose.position.x + step_size;
+        for (double t = 0.0; target_pose.position.x < end_step; t += 0.01) {
+            target_pose.position.x += t;
             waypoints.push_back(target_pose);
         }
-
-        for (double t = max_angle; t > min_angle ; t -= 0.1){
-            target_pose.position.x = R * cos(t) + x_offset;
+        for (double t = max_angle; t > min_angle ; t -= angle_step_size){
+            target_pose.position.y = R * cos(t) + y_offset;
             target_pose.position.z = R * sin(t) + z_offset;
-            target_pose.position.y = step_size * (p + 1) + y_offset;
+            target_pose.position.x = step_size * (p + 1) + x_offset;
             tf2::Quaternion q;
-            q.setRPY(M_PI, (M_PI/4.0)-(2.0/3.0)*(t-(M_PI/8.0)), 0.0);
+            q.setRPY((M_PI/4.0)-(2.0/3.0)*(t-(M_PI/8.0)), M_PI, 0.0);
             target_pose.orientation.w = q.w();
             target_pose.orientation.x = q.x();
             target_pose.orientation.y = q.y();
             target_pose.orientation.z = q.z();
             waypoints.push_back(target_pose);
         }
-
-        for (double t = 1.0; t < 2.0; t += 0.01) {
-            target_pose.position.x = R * cos(min_angle) + x_offset;
-            target_pose.position.z = R * sin(min_angle) + z_offset;
-            target_pose.position.y = step_size * (p + t) + y_offset;
-            tf2::Quaternion q;
-            q.setRPY(M_PI, M_PI/4.0, 0.0);
-            target_pose.orientation.w = q.w();
-            target_pose.orientation.x = q.x();
-            target_pose.orientation.y = q.y();
-            target_pose.orientation.z = q.z();
+        end_step = target_pose.position.x + step_size;
+        for (double t = 0.0; target_pose.position.x < end_step; t += 0.01) {
+            target_pose.position.x += t;
             waypoints.push_back(target_pose);
         }
     }

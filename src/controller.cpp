@@ -180,7 +180,11 @@ int main(int argc, char * argv[])
                 // if fraction is less than 1.0 it means that only a fraction of the waypoints could be reached in cartesian space
                 // if fraction is -1.0 there was an error
                 is_valid_trajectory = true;
-                RCLCPP_INFO(node->get_logger(), "Planning to: x_%.2f y_%.2f z_%.2f succeeded", waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z);
+                tf2::Quaternion q = tf2::Quaternion(waypoints[i].orientation.x, waypoints[i].orientation.y, waypoints[i].orientation.z, waypoints[i].orientation.w);
+                tf2::Matrix3x3 m(q);
+                double roll, pitch, yaw;
+                m.getRPY(roll, pitch, yaw);
+                RCLCPP_INFO(node->get_logger(), "Planning to: x_%.2f y_%.2f z_%.2f r_%.2f p_%.2f y_%.2f succeeded", waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z, roll, pitch, yaw);
                 move_group_interface.execute(trajectory);
                 // pause to record pcd
                 RCLCPP_INFO(node->get_logger(), "Pausing for %i milliseconds to enable stable point cloud recording", wait_milliseconds);
