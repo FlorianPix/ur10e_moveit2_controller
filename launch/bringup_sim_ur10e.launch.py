@@ -23,6 +23,14 @@ def generate_launch_description():
                               executable='sim_camera_adapter',
                               arguments=[])
 
+    pcd_bridge = Node(package='ros_ign_bridge',
+                      executable='parameter_bridge',
+                      arguments=['/depth_camera/points@sensor_msgs/msg/PointCloud2[ignition.msgs.PointCloudPacked'])
+
+    pose_bridge = Node(package='ros_ign_bridge',
+                       executable='parameter_bridge',
+                       arguments=['/depth_camera/pose@geometry_msgs/msg/Pose]ignition.msgs.Pose'])
+
     moveit = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource([moveit_launch]),
         launch_arguments={'ur_type': 'ur10e',
@@ -48,5 +56,7 @@ def generate_launch_description():
     ld.add_action(rviz)
     ld.add_action(tf_static)
     ld.add_action(sim_camera_adapter)
+    ld.add_action(pcd_bridge)
+    ld.add_action(pose_bridge)
 
     return ld

@@ -16,16 +16,16 @@
         specimen: [0.3, 0.3, 0.1, 1.0, 1.0, 0.0, 0.0, 0.0, -0.785398163]
         camera: [0.18, 0.03, 0.05, 0.0, 0.0, 0.04, 0.0, 0.0, 0.785398163]
     rectangle:
-        y_min: -0.5
+        y_min: -0.15
         x_offset: 0.5
-        z_min: 0.0
-        y_max: 0.5
-        z_max: 1.0
+        z_min: 0.1
+        y_max: 0.15
+        z_max: 0.4
         steps: 4.0
         pitch_adjust: True
-        pitch_min: -0.1963
-        pitch_max: 0.1963
-        pitch_step: 0.1963
+        pitch_min: -0.19
+        pitch_max: 0.19
+        pitch_step: 0.19
     cylinder_section: 
       R: 0.3
       step_size: 0.05
@@ -35,4 +35,4 @@
       y_offset: 0.0
       z_offset: 0.0
     wait_milliseconds: 2000
-    use_rectangle_trajectory: False
+    use_rectangle_trajectory: True
