@@ -10,10 +10,12 @@ import subprocess
 def generate_launch_description():
     pkg_ur_bringup = get_package_share_directory('ur_bringup')
     pkg_ur10e_moveit2_controller = get_package_share_directory('ur10e_moveit2_controller')
+    pkg_pcd_demo = get_package_share_directory('pcd_demo')
 
     moveit_launch = PathJoinSubstitution([pkg_ur_bringup, 'launch', 'ur_control.launch.py'])
     rviz_launch = PathJoinSubstitution([pkg_ur_bringup, 'launch', 'ur_moveit.launch.py'])
     ur10e_moveit2_controller_launch = PathJoinSubstitution([pkg_ur10e_moveit2_controller, 'launch', 'controller.launch.py'])
+    pcd_to_ply_launch = PathJoinSubstitution([pkg_pcd_demo, 'launch', 'pcd_to_ply_pause.launch.py'])
 
     tf_static = Node(package='tf2_ros',
                      executable='static_transform_publisher',
@@ -39,6 +41,7 @@ def generate_launch_description():
                           'launch_rviz': 'false',
                           'initial_joint_controller': 'joint_trajectory_controller'}.items()
     )
+
     rviz = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource([rviz_launch]),
         launch_arguments={'ur_type': 'ur10e',
@@ -46,8 +49,14 @@ def generate_launch_description():
                           'use_fake_hardware': 'true',
                           'launch_rviz': 'true'}.items()
     )
+
     controller = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource([ur10e_moveit2_controller_launch]),
+        launch_arguments=[]
+    )
+
+    pcd_to_ply = launch.actions.IncludeLaunchDescription(
+        launch.launch_description_sources.PythonLaunchDescriptionSource([pcd_to_ply_launch]),
         launch_arguments=[]
     )
 
@@ -58,5 +67,6 @@ def generate_launch_description():
     ld.add_action(sim_camera_adapter)
     ld.add_action(pcd_bridge)
     ld.add_action(pose_bridge)
+    ld.add_action(pcd_to_ply)
 
     return ld
