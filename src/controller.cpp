@@ -58,20 +58,16 @@ int main(int argc, char * argv[])
     std::vector<double> conveyor_control_coll = node->get_parameter("collision.conveyor_control").as_double_array();
     std::vector<double> UR10_control_coll = node->get_parameter("collision.UR10_control").as_double_array();
     std::vector<double> conveyor_coll = node->get_parameter("collision.conveyor").as_double_array();
-    std::vector<double> specimen_coll = node->get_parameter("collision.specimen").as_double_array();
     std::vector<double> camera_coll = node->get_parameter("collision.camera").as_double_array();
     unsigned int wait_milliseconds = node->get_parameter("wait_milliseconds").as_int();
     bool use_rectangle_trajectory = node->get_parameter("use_rectangle_trajectory").as_bool();
-    double rectangle_y_min = node->get_parameter("rectangle.y_min").as_double();
-    double rectangle_x_offset = node->get_parameter("rectangle.x_offset").as_double();
-    double rectangle_z_min = node->get_parameter("rectangle.z_min").as_double();
-    double rectangle_y_max = node->get_parameter("rectangle.y_max").as_double();
-    double rectangle_z_max = node->get_parameter("rectangle.z_max").as_double();
-    double rectangle_steps = node->get_parameter("rectangle.steps").as_double();
-    double rectangle_pitch_min = node->get_parameter("rectangle.pitch_min").as_double();
-    double rectangle_pitch_max = node->get_parameter("rectangle.pitch_max").as_double();
-    double rectangle_pitch_step = node->get_parameter("rectangle.pitch_step").as_double();
-    bool rectangle_pitch_adjust = node->get_parameter("rectangle.pitch_adjust").as_bool();
+    double specimen_x_width = node->get_parameter("specimen.x_width").as_double();
+    double specimen_y_width = node->get_parameter("specimen.y_width").as_double();
+    double specimen_theta = node->get_parameter("specimen.theta").as_double();
+    double specimen_x_off = node->get_parameter("specimen.x_off").as_double();
+    double specimen_y_off = node->get_parameter("specimen.y_off").as_double();
+    double specimen_z_min = node->get_parameter("specimen.z_min").as_double();
+    double specimen_z_max = node->get_parameter("specimen.z_max").as_double();
     double cylinder_section_R = node->get_parameter("cylinder_section.R").as_double();
     double cylinder_section_step_size = node->get_parameter("cylinder_section.step_size").as_double();
     double cylinder_section_min_angle = node->get_parameter("cylinder_section.min_angle").as_double();
@@ -98,7 +94,17 @@ int main(int argc, char * argv[])
         collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "conveyor_control", conveyor_control_coll[0], conveyor_control_coll[1], conveyor_control_coll[2], conveyor_control_coll[3], conveyor_control_coll[4], conveyor_control_coll[5], conveyor_control_coll[6], conveyor_control_coll[7], conveyor_control_coll[8]));
         collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "UR10_control", UR10_control_coll[0], UR10_control_coll[1], UR10_control_coll[2], UR10_control_coll[3], UR10_control_coll[4], UR10_control_coll[5], UR10_control_coll[6], UR10_control_coll[7], UR10_control_coll[8]));
         collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "conveyor", conveyor_coll[0], conveyor_coll[1], conveyor_coll[2], conveyor_coll[3], conveyor_coll[4], conveyor_coll[5], conveyor_coll[6], conveyor_coll[7], conveyor_coll[8]));
-        collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "specimen", specimen_coll[0], specimen_coll[1], specimen_coll[2], specimen_coll[3], specimen_coll[4], specimen_coll[5], specimen_coll[6], specimen_coll[7], specimen_coll[8]));
+        collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(),
+            "specimen",
+            specimen_x_width,
+            specimen_y_width,
+            specimen_z_max - specimen_z_min,
+            (specimen_x_off + specimen_x_width / 2) * std::cos(specimen_theta) - specimen_y_off * std::sin(specimen_theta),
+            (specimen_x_off + specimen_x_width / 2) * std::sin(specimen_theta) + specimen_y_off * std::cos(specimen_theta),
+            specimen_z_min + (specimen_z_max - specimen_z_min) / 2,
+            0.0,
+            0.0,
+            specimen_theta));
         if (collision_walls) {
             collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "wall1", wall1_coll[0], wall1_coll[1], wall1_coll[2], wall1_coll[3], wall1_coll[4], wall1_coll[5], wall1_coll[6], wall1_coll[7], wall1_coll[8]));
             collision_objects.push_back(create_collision_box(move_group_interface.getPlanningFrame(), "wall2", wall2_coll[0], wall2_coll[1], wall2_coll[2], wall2_coll[3], wall2_coll[4], wall2_coll[5], wall2_coll[6], wall2_coll[7], wall2_coll[8]));
@@ -125,17 +131,14 @@ int main(int argc, char * argv[])
 
     std::vector<geometry_msgs::msg::Pose> waypoints;
     if (use_rectangle_trajectory){
-        waypoints = create_rectangle(
-            rectangle_y_min,
-            rectangle_x_offset,
-            rectangle_z_min,
-            rectangle_y_max,
-            rectangle_z_max,
-            rectangle_steps,
-            rectangle_pitch_min,
-            rectangle_pitch_max,
-            rectangle_pitch_step,
-            rectangle_pitch_adjust
+        waypoints = create_rectangle_for_specimen(
+            specimen_x_width,
+            specimen_y_width,
+            specimen_theta,
+            specimen_x_off,
+            specimen_y_off,
+            specimen_z_min,
+            specimen_z_max
         );
     } else {
         waypoints = create_cylinder_section(

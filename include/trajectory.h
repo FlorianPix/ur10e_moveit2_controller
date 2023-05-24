@@ -1,5 +1,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <algorithm>
+#include <stdexcept>
 
 #include <memory>
 
@@ -87,16 +89,17 @@ std::vector<geometry_msgs::msg::Pose> create_cylinder_section(
 }
 
 std::vector<geometry_msgs::msg::Pose> create_rectangle(
-    double y_min = -0.5 /* x position of first point of rectangle */,
-    double x_offset = 0.5 /* y position of first point of rectangle */,
+    double y_min = -0.5 /* y position of first point of rectangle */,
+    double x_offset = 0.5 /* x position of first point of rectangle */,
     double z_min = 0.1 /* z position of first point of rectangle */,
-    double y_max = 0.5 /* x position of last point of rectangle */,
+    double y_max = 0.5 /* y position of last point of rectangle */,
     double z_max = 0.5 /* z position of last point of rectangle */,
     double steps = 4.0 /* divisions of the rectangle */,
     double pitch_min = -M_PI/16,
     double pitch_max = M_PI/16,
     double pitch_step = M_PI/16,
-    bool pitch_adjust = false) {
+    bool pitch_adjust = false,
+    double theta = M_PI/4) {
     std::vector<geometry_msgs::msg::Pose> waypoints;
     geometry_msgs::msg::Pose target_pose;
 
@@ -164,5 +167,28 @@ std::vector<geometry_msgs::msg::Pose> create_rectangle(
         }
     }
     waypoints.push_back(waypoints.at(0));
-    return rotate(waypoints, M_PI/4);
+    return rotate(waypoints, theta);
+}
+
+std::vector<geometry_msgs::msg::Pose> create_rectangle_for_specimen(
+    double x_width = 1.0 /* width of the specimen in x direction (forward-backward) in meters */,
+    double y_width = 1.0 /* width of the specimen in y direction (left-right) in meters */,
+    double theta = 0.785398163 /* rotation around z-axis as radians */,
+    double x_off = 0.8 /* offset in x direction (forward-backward) in meters */,
+    double y_off = 0.0 /* offset in y direction (left-right) in meters */,
+    double z_min = 0.0 /* lower limit for height in meters */,
+    double z_max = 1.0 /* upper limit for height in meters */
+){
+    if (x_width < 0.0) throw std::invalid_argument("x_width can't be less than 0.0");
+    if (y_width < 0.0) throw std::invalid_argument("y_width can't be less than 0.0");
+    if (x_off < 0.5) throw std::invalid_argument("x_off can't be less than 0.5");
+    if (std::abs(y_off) > 0.65) throw std::invalid_argument("the absolute value of y_off can't exceed 0.65");
+    if (z_min > z_max) throw std::invalid_argument("z_min can't exceed z_max");
+
+    x_off = std::min(std::max(x_off - 0.25, 0.25), 0.75);
+    double y_min = std::max(y_off - y_width / 2, -0.5);
+    double y_max = std::min(y_off + y_width / 2, 0.5);
+    z_min = std::max(z_min, 0.1);
+    z_max = std::min(z_max, 1.0);
+    return create_rectangle(y_min, x_off, z_min, y_max, z_max, 4.0, 0.0, 0.0, 0.0, false, theta);
 }
