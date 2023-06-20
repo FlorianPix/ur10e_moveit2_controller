@@ -26,7 +26,7 @@ def generate_launch_description():
     moveit = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource([moveit_launch]),
         launch_arguments={'ur_type': 'ur10e',
-                          'robot_ip': '172.19.0.10',
+                          'robot_ip': '192.168.2.5',
                           'use_fake_hardware': 'false',
                           'launch_rviz': 'false',
                           'initial_joint_controller': 'joint_trajectory_controller'}.items()
@@ -35,7 +35,7 @@ def generate_launch_description():
     rviz = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource([rviz_launch]),
         launch_arguments={'ur_type': 'ur10e',
-                          'robot_ip': '172.19.0.10',
+                          'robot_ip': '192.168.2.5',
                           'use_fake_hardware': 'false',
                           'launch_rviz': 'true'}.items()
     )
